@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mapper>
+    <sql id="day_alert_statistic">
+        SELECT
+        CONCAT(DATE_FORMAT(report_time, '%H'),':00') AS `date`,
+        COUNT(CASE
+        WHEN alerts_status = '1' THEN 1
+        END) AS realtimeAlarmCount,
+        COUNT(CASE
+        WHEN alerts_status = '2' THEN 1
+        END) AS realtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE tenant_code=? and
+        DATE(report_time) = CURDATE()
+        GROUP BY
+        date,
+        tenant_code,
+        station_code,
+        equipment_code;
+    </sql>
+    <sql id="week_alert_statistic">
+        SELECT
+        CONCAT(DATE_FORMAT(report_time, '%Y'),
+        '-',
+        DATE_FORMAT(report_time, '%m'),
+        '-',
+        DATE_FORMAT(report_time, '%d')) AS `date`,
+        COUNT(CASE
+        WHEN alerts_status = '1' THEN 1
+        END) AS realtimeAlarmCount,
+        COUNT(CASE
+        WHEN alerts_status = '2' THEN 1
+        END) AS realtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE tenant_code=? and
+        DATE_SUB(CURDATE(), INTERVAL 7 DAY) &lt; DATE(report_time)
+        GROUP BY
+        date,
+        tenant_code,
+        station_code,
+        equipment_code;
+    </sql>
+    <sql id="month_alert_statistic">
+        SELECT
+        CONCAT(DATE_FORMAT(report_time, '%Y'),
+        '-',
+        DATE_FORMAT(report_time, '%m'),
+        '-',
+        DATE_FORMAT(report_time, '%d')) AS `date`,
+        count(case when alerts_status='1' then 1 end) as realtimeAlarmCount,
+        count(case when alerts_status='2' then 1 end) as realtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE tenant_code=? and
+        DATE_SUB(CURDATE(), INTERVAL 1 MONTH) &lt; DATE(report_time)
+        GROUP BY
+        date,
+        tenant_code,
+        station_code,
+        equipment_code;
+    </sql>
+    <sql id="year_alert_statistic">
+        SELECT
+        CONCAT(DATE_FORMAT(report_time, '%Y'),
+        '-',
+        DATE_FORMAT(report_time, '%m')) AS `date`,
+        count(case when alerts_status='1' then 1 end) as realtimeAlarmCount,
+        count(case when alerts_status='2' then 1 end) as realtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE tenant_code=? and
+        DATE_SUB(CURDATE(), INTERVAL 1 YEAR) &lt; DATE(report_time)
+        GROUP BY
+        date,
+        tenant_code,
+        station_code,
+        equipment_code;
+    </sql>
+    <sql id="auxiliary_system_equipment_statistic">
+        SELECT
+        CONCAT(DATE_FORMAT(report_time, '%Y'),
+        '-',
+        DATE_FORMAT(report_time, '%m')) AS `date`,
+        count(case when alerts_status='1' then 1 end) as RealtimeAlarmCount,
+        count(case when alerts_status='2' then 1 end) as RealtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE tenant_code=? and
+        DATE_SUB(CURDATE(), INTERVAL 1 YEAR) &lt; DATE(report_time)
+        GROUP BY date;
+    </sql>
+
+
+    <sql id="day_alert_record_statistic">
+        SELECT
+        count(case when alerts_status='1' then 1 end) as RealtimeAlarmCount,
+        count(case when alerts_status='2' then 1 end) as RealtimeFaultCount
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        report_time BETWEEN CONCAT( CURDATE(), ' 00:00:00' )
+        AND CONCAT( CURDATE(), ' 23:59:59' ) and tenant_code = ? and station_code = ?
+    </sql>
+
+    <sql id="dailyAlertRecordAveHandleTime">
+        SELECT
+        IFNULL(AVG(CASE
+        WHEN
+        handle_status IN (2 , 3)
+        THEN
+        TIMESTAMPDIFF(MINUTE,
+        report_time,
+        handle_time)
+        ELSE 0
+        END),
+        0) AS minuteTime
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ? and alerts_status=2
+        AND DATE_FORMAT(report_time, '%Y-%m-%d') = ?
+    </sql>
+    <sql id="historyAlertRecordAveHandleTime">
+        SELECT
+        IFNULL(AVG(CASE
+        WHEN
+        handle_status IN (2 , 3)
+        THEN
+        TIMESTAMPDIFF(MINUTE,
+        report_time,
+        handle_time)
+        ELSE 0
+        END),
+        0) AS minuteTime
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ? and alerts_status=2
+    </sql>
+    <sql id="alerts_describe_group">
+        SELECT
+        *
+        FROM
+        (SELECT
+        alerts_describe, COUNT(1) AS alert_count,device_model_alerts_code
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ?
+        AND alerts_status = ?
+        GROUP BY alerts_describe) a
+        ORDER BY alert_count DESC
+        LIMIT 10
+    </sql>
+    <sql id="alerts_describe_group_station_code">
+        SELECT
+        *
+        FROM
+        (SELECT
+        alerts_describe, COUNT(1) AS alert_count
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ?
+        and station_code in ?
+        AND alerts_status = ?
+        GROUP BY alerts_describe) a
+        ORDER BY alert_count DESC
+        LIMIT 10
+    </sql>
+    <sql id="alerts_describe_equipment_code_group">
+        SELECT
+        COUNT(DISTINCT(equipment_code)) AS equipment_code_count, alerts_describe
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ?
+        AND alerts_status = ?
+        AND alerts_describe IN ?
+        GROUP BY equipment_code , alerts_describe
+    </sql>
+    <sql id="alerts_describe_equipment_code_group_station_code">
+        SELECT
+        COUNT(DISTINCT(equipment_code)) AS equipment_code_count, alerts_describe
+        FROM
+        iec_cems_alerts_record
+        WHERE
+        tenant_code = ?
+        and station_code in ?
+        AND alerts_status = ?
+        AND alerts_describe IN ?
+        GROUP BY equipment_code , alerts_describe
+    </sql>
+
+</mapper>

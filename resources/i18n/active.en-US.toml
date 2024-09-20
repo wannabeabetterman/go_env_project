@@ -1,0 +1,10 @@
+#[TestMessage]
+#description = "Test message"
+#one = "This is {{.PluralCount}} test message."
+#other = "These are {{.PluralCount}} test messages."
+
+[OkMessage]
+description = "Success Message"
+one = "Operation Successful"
+other = "Operation Successful"
+

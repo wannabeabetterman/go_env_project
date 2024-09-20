@@ -1,0 +1,12 @@
+#[TestMessage]
+#description = "测试单复数消息"
+#one = "这是 {{.PluralCount}} 条测试消息."
+#other = "这些是 {{.PluralCount}} 条测试消息."
+
+[OkMessage]
+description = "成功消息"
+one = "操作成功"
+other = "操作成功"
+
+
+
